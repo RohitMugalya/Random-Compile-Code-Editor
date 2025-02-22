@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Code Editor with Language Selection</title>
+
+  <!-- CodeMirror CSS for styling the editor -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
+
+  <!-- Optional theme CSS (Choose your preferred theme) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/dracula.min.css">
+
+  <style>
+    /* Basic styling for the body to ensure full height and no scrollbars */
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Container for the two columns, taking up full height */
+    .container {
+      display: flex;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Left column (Output Section) */
+    .question-section {
+      flex: 1; /* Takes 50% of the space */
+      padding: 10px;
+      background-color: #e0e0e0;
+      display: flex;
+      flex-direction: column;
+      position: relative;  /* Allows absolute positioning of the buttons */
+    }
+
+    /* Right column (Answer - CodeMirror editor) */
+    .answer-section {
+      flex: 1; /* Takes 50% of the space */
+      padding: 10px;
+      background-color: #ffffff;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Styling for the Output area */
+    .output-container {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: #f4f4f4;
+      font-size: large;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      width:750px;
+      flex-grow: 1; /* Ensures it grows with available space */
+      max-height: calc(100% - 150px); /* Prevent it from growing beyond a certain point */
+      overflow-y: auto; /* Enable vertical scrolling when the content overflows */
+    }
+
+    /* Dropdown styling */
+    .language-dropdown {
+      position: absolute;
+      margin-top: 20px;
+      top: 10px;
+      right: 10px;
+      padding: 5px;
+      background-color: #333;
+      color: white;
+      border: none;
+      font-size: 14px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    /* Button Container for Run and Submit */
+    .button-container {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      display: flex;
+      flex-direction: row;
+      gap: 10px;
+    }
+
+    .button-container button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .button-container button:hover {
+      background-color: #45a049;
+    }
+
+    /* Styling for the Submit button */
+    .submit-button {
+      background-color: #f44336;
+    }
+
+    .submit-button:hover {
+      background-color: #e53935;
+    }
+
+    /* Styling for the editor container */
+    .editor-container {
+      height: 100%; /* Make it take the full height of the answer section */
+    }
+
+    /* Styling for the CodeMirror editor */
+    .CodeMirror {
+      height: 100% !important;
+      border: 1px solid #ccc;
+      font-size: 18px; /* Adjust font size for 30 lines */
+    }
+
+    /* Optional: Customize the line numbers */
+    .CodeMirror-gutter {
+      background-color: #f4f4f4;
+    }
+
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <!-- Question Section (Left Column) -->
+    <div class="question-section">
+      <h2>Output</h2>
+      <div id="output" class="output-container">
+        <pre id="outputText" class="no-output">No output yet</pre>
+      </div>
+
+      <!-- Button Container for Run and Submit buttons (Positioned at the bottom right of the left section) -->
+      <div class="button-container">
+        <button id="runButton">Run</button>
+        <button id="submitButton" class="submit-button">Submit</button>
+      </div>
+    </div>
+
+    <!-- Answer Section (Right Column) -->
+    <div class="answer-section">
+      <h2>Code Editor</h2>
+      <!-- Dropdown for selecting language -->
+      <select id="languageSelector" class="language-dropdown">
+        <option value="python">Python</option>
+        <option value="c">C</option>
+        <option value="clike">C++</option>
+        <option value="java">Java</option>
+      </select>
+
+      <div class="editor-container">
+        <textarea id="codeEditor"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Include CodeMirror JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/python/python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/clike/clike.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/java/java.min.js"></script>
+
+  <!-- JavaScript for initializing the CodeMirror editor -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      // Custom random numbers to populate as line numbers in CodeMirror editor
+      const randomNumbers = [7, 3, 1, 24, 5, 16, 10, 13, 29, 9, 23, 18, 8, 12, 26, 14, 28, 21, 25, 30, 17, 6, 19, 20, 11, 4, 15, 22, 2, 27];
+      
+      // Prepare text content for the editor (this should just be empty content)
+      const numbersText = randomNumbers.map(() => "").join('\n'); // Empty lines for content
+      
+      // Initialize the CodeMirror editor on the textarea element
+      var editor = CodeMirror.fromTextArea(document.getElementById('codeEditor'), {
+        mode: "javascript",           // Default mode (JavaScript)
+        theme: "dracula",             // Set theme for the editor
+        lineNumbers: true,            // Show line numbers
+        lineWrapping: true,           // Enable line wrapping
+        matchBrackets: true,          // Highlight matching brackets
+        autoCloseBrackets: true,      // Automatically close brackets
+        extraKeys: {                  // Add extra key commands (e.g., autocompletion)
+          "Ctrl-Space": "autocomplete"  // Trigger autocomplete on Ctrl+Space
+        },
+        indentUnit: 2,                // Set indentation unit to 2 spaces
+        tabSize: 2,                   // Set tab size to 2
+        indentWithTabs: false,        // Use spaces instead of tabs for indentation
+
+        // Custom gutter with random line numbers
+        gutters: ["CodeMirror-linenumbers"], // Use default line number gutter
+        lineNumberFormatter: function(line) {
+          return randomNumbers[line - 1] || '';  // Use the random number as line number
+        },
+
+        // Adjust the height to ensure exactly 30 lines
+        viewportMargin: Infinity // This will make sure the editor only takes the necessary space
+      });
+
+      // Set the editor's content to empty lines (no numbers inside the content)
+      editor.setValue(numbersText);
+
+      // Event listener for language selection
+      document.getElementById("languageSelector").addEventListener("change", function() {
+        // Get the selected programming language
+        const selectedLanguage = this.value;
+
+        // Switch the CodeMirror mode based on the selected language
+        editor.setOption("mode", selectedLanguage);
+      });
+
+      // Event listener for Run button
+      document.getElementById("runButton").addEventListener("click", function() {
+        const code = editor.getValue(); // Get code from the editor
+        const language = document.getElementById("languageSelector").value; // Get selected language
+
+        // Send code to backend to execute
+        fetch('http://localhost:3000/run-code', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ language, code })
+        })
+        .then(response => response.json())
+        .then(data => {
+          // Get the output container and text element
+          const outputContainer = document.getElementById("output");
+          const outputTextElement = document.getElementById("outputText");
+
+          // Set the output text
+          const outputText = data.output || data.error || 'No output';
+          outputTextElement.textContent = outputText;
+
+          // If there's no output, center the text, else display normally
+          if (outputText === 'No output') {
+            outputContainer.classList.add('no-output');
+            outputContainer.classList.remove('has-output');
+          } else {
+            outputContainer.classList.add('has-output');
+            outputContainer.classList.remove('no-output');
+          }
+        })
+        .catch(error => {
+          // Handle errors
+          document.getElementById("outputText").textContent = `Error: ${error.message}`;
+        });
+      });
+
+      // Event listener for Submit button
+      document.getElementById("submitButton").addEventListener("click", function() {
+        const code = editor.getValue(); // Get code from the editor
+        console.log("Submitting Code: ", code); // You can replace this with actual submission logic
+        alert("Code submitted!");
+      });
+    });
+  </script>
+</body>
+</html>

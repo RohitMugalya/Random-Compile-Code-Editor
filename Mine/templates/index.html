@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Editor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h1>VS Code-like Editor with Shuffled Line Numbers</h1>
+    <div class="editor-container">
+        <div class="line-numbers">
+            {% for original, shuffled in line_mapping.items() %}
+                <div>{{ shuffled }}</div>
+            {% endfor %}
+        </div>
+        <textarea id="code-editor" name="code" placeholder="Write your code here..."></textarea>
+    </div>
+    <button onclick="submitCode()">Submit Code</button>
+
+    <script>
+        function submitCode() {
+            const code = document.getElementById('code-editor').value;
+            fetch('/submit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `code=${encodeURIComponent(code)}`,
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+            });
+        }
+    </script>
+</body>
+</html>
