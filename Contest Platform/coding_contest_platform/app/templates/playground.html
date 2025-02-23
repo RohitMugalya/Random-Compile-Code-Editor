@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <!-- Question Section -->
+            <div class="col-md-6">
+                <h2>Question</h2>
+                {% if question %}
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ question.question_text }}</h5>
+                            <h6>Input Format:</h6>
+                            <p>{{ question.input_format }}</p>
+                            <h6>Output Format:</h6>
+                            <p>{{ question.output_format }}</p>
+                            <h6>Sample Input:</h6>
+                            <pre>{{ question.sample_input }}</pre>
+                            <h6>Sample Output:</h6>
+                            <pre>{{ question.sample_output }}</pre>
+                            <h6>Constraints:</h6>
+                            <p>{{ question.constraints }}</p>
+                            <h6>Points:</h6>
+                            <p>{{ question.points }}</p>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="alert alert-danger">No question available!</div>
+                {% endif %}
+            </div>
+
+            <!-- Code Canvas Section -->
+            <div class="col-md-6">
+                <h2>Code Canvas</h2>
+                {% if user %}
+                    <div class="card">
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('main.submit_code', user_id=user.id, question_id=question.id) }}">
+                                {{ form.hidden_tag() }}
+                                <div class="mb-3">
+                                    <label for="code" class="form-label">Write your code:</label>
+                                    <div id="code-editor" class="border p-2">
+                                        <!-- Line numbers -->
+                                        <div id="line-numbers" class="text-muted me-2" style="width: 30px; float: left;">
+                                            {% for line in shuffled_lines %}
+                                                <div>{{ line }}</div>
+                                            {% endfor %}
+                                        </div>
+                                        <!-- Code input -->
+                                        <textarea id="code-input" name="code" class="form-control" rows="20" style="width: calc(100% - 40px);"></textarea>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.language.label(class="form-label") }}
+                                    {{ form.language(class="form-select") }}
+                                    {% if form.language.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.language.errors %}
+                                                <small>{{ error }}</small><br>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="d-grid">
+                                    {{ form.submit(class="btn btn-success") }}
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="alert alert-danger">User not found!</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

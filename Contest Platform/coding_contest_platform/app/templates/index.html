@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <h1 class="text-center mb-4">Welcome to the Coding Contest Platform!</h1>
+                <div class="card">
+                    <div class="card-body">
+                        <h2 class="card-title text-center">Join the Contest</h2>
+                        <form method="POST" action="{{ url_for('main.index') }}">
+                            {{ form.hidden_tag() }}
+                            <div class="mb-3">
+                                {{ form.name.label(class="form-label") }}
+                                {{ form.name(class="form-control", placeholder="Enter your name") }}
+                                {% if form.name.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.name.errors %}
+                                            <small>{{ error }}</small><br>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="d-grid">
+                                {{ form.submit(class="btn btn-primary") }}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
