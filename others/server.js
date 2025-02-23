@@ -1,24 +1,36 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const { exec } = require('child_process');
-const app = express();
+const fs = require('fs');
 const cors = require('cors');
+const path = require('path');
+
+const app = express();
 const port = 3000;
 
 app.use(cors());
-
-// Middleware
 app.use(bodyParser.json());
 
-// Route to handle code execution
+// Serve static files (like index.html) from the current directory
+app.use(express.static(__dirname));
+
+// Home Route - Serve `index.html`
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Route to execute user-submitted code
 app.post('/run-code', (req, res) => {
   const { language, code } = req.body;
+  
+  if (!language || !code) {
+    return res.status(400).send({ error: 'Language and code are required' });
+  }
 
-  let command = '';
   let fileExtension = '';
   let fileName = '';
+  let command = '';
 
-  // Determine the correct compiler based on the language
   switch (language) {
     case 'python':
       fileExtension = 'py';
@@ -30,7 +42,7 @@ app.post('/run-code', (req, res) => {
       fileName = 'script.c';
       command = `gcc ${fileName} -o output && ./output`;
       break;
-    case 'clike':
+    case 'cpp':
       fileExtension = 'cpp';
       fileName = 'script.cpp';
       command = `g++ ${fileName} -o output && ./output`;
@@ -44,16 +56,21 @@ app.post('/run-code', (req, res) => {
       return res.status(400).send({ error: 'Unsupported language' });
   }
 
-  // Write the code to a file and execute it
-  const fs = require('fs');
-  fs.writeFileSync(fileName, code);
-
-  // Execute the command
-  exec(command, (error, stdout, stderr) => {
-    if (error) {
-      return res.status(500).send({ error: stderr });
+  fs.writeFile(fileName, code, (err) => {
+    if (err) {
+      return res.status(500).send({ error: 'Failed to write file' });
     }
-    res.send({ output: stdout });
+
+    exec(command, (error, stdout, stderr) => {
+      fs.unlinkSync(fileName);
+      if (language === 'c' || language === 'cpp') fs.unlinkSync('output');
+      if (language === 'java') fs.unlinkSync('Script.class');
+
+      if (error) {
+        return res.status(500).send({ error: stderr });
+      }
+      res.send({ output: stdout });
+    });
   });
 });
 

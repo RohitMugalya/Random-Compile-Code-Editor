@@ -216,41 +216,60 @@
 
       // Event listener for Run button
       document.getElementById("runButton").addEventListener("click", function() {
-        const code = editor.getValue(); // Get code from the editor
-        const language = document.getElementById("languageSelector").value; // Get selected language
+    const code = editor.getValue(); // Get the code entered in the editor
+    const language = document.getElementById("languageSelector").value; // Get selected language
 
-        // Send code to backend to execute
-        fetch('http://localhost:3000/run-code', {
-          method: 'POST',
-          headers: {
+    // Split the content by lines
+    const lines = code.split('\n');
+    
+    // Create a new array to hold the reordered lines
+    const reorderedLines = [];
+
+    // Loop through randomNumbers and find the corresponding index for each value
+    for (let i = 1; i <= randomNumbers.length; i++) {
+        // Find where `num` is located in the randomNumbers array (this gives the index)
+        const index = randomNumbers.indexOf(i); // `indexOf(num)` finds where `num` is located in the array
+        reorderedLines.push(lines[index]);
+    }
+
+    // Join reorderedLines back into a single string
+    const reorderedCode = reorderedLines.join('\n');
+
+    console.log(reorderedCode); // For debugging, print the reordered code
+
+    // Send reordered code to backend to execute
+    fetch('http://localhost:3000/run-code', {
+        method: 'POST',
+        headers: {
             'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ language, code })
-        })
-        .then(response => response.json())
-        .then(data => {
-          // Get the output container and text element
-          const outputContainer = document.getElementById("output");
-          const outputTextElement = document.getElementById("outputText");
+        },
+        body: JSON.stringify({ language, code: reorderedCode }) // Sending the reordered code
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Get the output container and text element
+        const outputContainer = document.getElementById("output");
+        const outputTextElement = document.getElementById("outputText");
 
-          // Set the output text
-          const outputText = data.output || data.error || 'No output';
-          outputTextElement.textContent = outputText;
+        // Set the output text
+        const outputText = data.output || data.error || 'No output';
+        outputTextElement.textContent = outputText;
 
-          // If there's no output, center the text, else display normally
-          if (outputText === 'No output') {
+        // If there's no output, center the text, else display normally
+        if (outputText === 'No output') {
             outputContainer.classList.add('no-output');
             outputContainer.classList.remove('has-output');
-          } else {
+        } else {
             outputContainer.classList.add('has-output');
             outputContainer.classList.remove('no-output');
-          }
-        })
-        .catch(error => {
-          // Handle errors
-          document.getElementById("outputText").textContent = `Error: ${error.message}`;
-        });
-      });
+        }
+    })
+    .catch(error => {
+        // Handle any errors during the fetch
+        console.error('Error executing the code:', error);
+        document.getElementById("outputText").textContent = `Error: ${error.message}`;
+    });
+});
 
       // Event listener for Submit button
       document.getElementById("submitButton").addEventListener("click", function() {
