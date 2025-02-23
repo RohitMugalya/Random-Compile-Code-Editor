@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coding Playground</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.42.0/min/vs/loader.js"></script>
+</head>
+<body>
+    <nav>
+        <a href="{{ url_for('leaderboard.view') }}">Leaderboard</a>
+    </nav>
+
+    <div class="container">
+        <div class="question-section">
+            <h2>Question</h2>
+            <p>{{ question }}</p>
+            <p><strong>Points:</strong> {{ points }}</p>
+        </div>
+
+        <div class="editor-section">
+            <h2>Code Editor</h2>
+            <select id="language">
+                <option value="python">Python</option>
+                <option value="cpp">C++</option>
+                <option value="java">Java</option>
+                <option value="c">C</option>
+            </select>
+            <div id="editor" style="width: 600px; height: 400px;"></div>
+            <button id="submit-code">Submit</button>
+        </div>
+    </div>
+
+    <script>
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.42.0/min/vs' } });
+        require(["vs/editor/editor.main"], function () {
+            var shuffledLines = [
+                "def main():",
+                "    print('Hello, World!')",
+                "# Write your code here",
+                "if __name__ == '__main__':",
+                "    main()"
+            ];
+            var shuffledText = shuffledLines.join("\n");
+
+            var editor = monaco.editor.create(document.getElementById('editor'), {
+                value: shuffledText,
+                language: "python",
+                theme: "vs-dark",
+                lineNumbers: "on"
+            });
+
+            document.getElementById('submit-code').addEventListener('click', function () {
+                var code = editor.getValue();
+                var language = document.getElementById('language').value;
+
+                fetch("{{ url_for('contest.submit') }}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ code: code, language: language })
+                })
+                .then(response => response.json())
+                .then(data => alert(data.message))
+                .catch(error => console.error("Error:", error));
+            });
+        });
+    </script>
+</body>
+</html>
